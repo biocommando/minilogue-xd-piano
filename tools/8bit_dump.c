@@ -5,16 +5,6 @@
 #include <math.h>
 #include <string.h>
 
-#define FAIL(msg)                   \
-    {                               \
-        printf("ERROR: " msg "\n"); \
-        return 1;                   \
-    }
-
-#define TRY(ex)  \
-    if (ex != 0) \
-    FAIL(#ex)
-
 int main(int argc, char **argv)
 {
     GET_ARG(arg_output, "-o");
