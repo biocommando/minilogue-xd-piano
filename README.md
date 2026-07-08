@@ -15,22 +15,22 @@ The signal is fed into 1-pole low-pass filter to clean up the lo-fi grittiness.
 
 #### User parameters
 - 1: Loop Mode 1..2:
-    1 = after note release, play sample to end and stop
-    2 = after note release, play sample to end and loop tail
+    * 1 = after note release, play sample to end and stop
+    * 2 = after note release, play sample to end and loop tail
 - 2: Bounce Count 1..33:
-    1..32: Before going to tail looping mode, bounce back this many times
-    33: Infinite bounces
+    * 1..32: Before going to tail looping mode, bounce back this many times
+    * 33: Infinite bounces
 - 3: Bnc Rst Prob (bounce reset probability) 1..64:
-    Probability of bouncing back to beginning of the sample instead of using the configured bounce point
+    * Probability of bouncing back to beginning of the sample instead of using the configured bounce point
 - 4: BW Limit 1..40:
-    Bandwidth limiting filter cutoff (times fundamental frequency)
-    Default: 20
+    * Bandwidth limiting filter cutoff (times fundamental frequency)
+    * Default: 20
 
 #### Shape parameters
 - Shape:
-    Sample length
+    * Sample length
 - Shift + Shape:
-    Bounce point. If not 0, bounces back to this position. Relative to the configured sample length. (E.g. 12 o'clock = bounces back to index sample length / 2)
+    * Bounce point. If not 0, bounces back to this position. Relative to the configured sample length. (E.g. 12 o'clock = bounces back to index sample length / 2)
 
 ## License
 Original code MIT licensed (see LICENSE.md). Korg code BSD 3-Clause Licensed, license headers retained in relevant code files.
