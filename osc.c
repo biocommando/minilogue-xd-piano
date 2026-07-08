@@ -72,6 +72,17 @@ static inline uint32_t calc_loopback_point(float v)
   return offs + (osc.data_len - offs) * v;
 }
 
+static inline float calc_freq(const user_osc_param_t *const params)
+{
+  return osc_w0f_for_note((params->pitch) >> 8, params->pitch & 0xFF) / k_samplerate_recipf;
+}
+
+static inline float calc_inc(float freq)
+{
+  float freqratio = 1 / MIDDLE_C_FREQ_HZ * osc.data_sr / k_samplerate;
+  return freq * freqratio;
+}
+
 static inline float data_osc_get()
 {
   uint32_t i = osc.phase;
@@ -97,6 +108,7 @@ void OSC_CYCLE(const user_osc_param_t *const params,
                int32_t *yn,
                const uint32_t frames)
 {
+  osc.inc = calc_inc(calc_freq(params));
   float shape_lfo = q31_to_f32(params->shape_lfo);
 
   uint32_t loopback_point = calc_loopback_point(osc.loopback_point + shape_lfo);
@@ -140,17 +152,14 @@ void OSC_CYCLE(const user_osc_param_t *const params,
 
 void OSC_NOTEON(const user_osc_param_t *const params)
 {
-  const float freq = osc_notehzf((params->pitch) >> 8);
+  const float freq = calc_freq(params);
 
   float ffreq = freq * osc.bwlim_ratio;
   if (ffreq > k_samplerate * 0.4)
     ffreq = k_samplerate * 0.4;
   init_filter(&osc.bwlim, ffreq, k_samplerate);
 
-  float freqratio = 1 / MIDDLE_C_FREQ_HZ * osc.data_sr / k_samplerate;
-  float inc = freq * freqratio;
-
-  osc.inc = inc;
+  osc.inc = calc_inc(freq);
   osc.phase = 0;
   osc.release_state = RELEASE_STATE_INIT;
   osc.loopback_bounce_counter = osc.loopback_bounce_offset < 0.001 ? 0 : osc.n_loopback_bounce;
