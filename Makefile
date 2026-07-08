@@ -149,13 +149,29 @@ all: PRE_ALL $(OBJS) $(OUTFILES) POST_ALL
 	@echo Done
 	@echo
 
-PRE_ALL: sample_data
+chg_piano:
+	rm -f project.mk
+	ln -s project.mk_piano project.mk
+
+chg_guitar:
+	rm -f project.mk
+	ln -s project.mk_guitar project.mk
+
+chg_choir:
+	rm -f project.mk
+	ln -s project.mk_choir project.mk
+
+PRE_ALL: sample_data prepare_manifest
 
 sample_data: 8bitdump
-	tools/8bit_dump -i sampledata/piano.wav -o generated_dataoscsrc.c -ts 1 -te 0
+	tools/8bit_dump $(SAMPLE_GEN_PARAMS) -o generated_dataoscsrc.c
 
 8bitdump:
 	$(CCNATIVE) tools/8bit_dump.c tools/args.c tools/wav_handler/wav_handler.c -o tools/8bit_dump
+
+prepare_manifest:
+	cp manifest.json.in $(MANIFEST)
+	sed -i "s/_PROJECT_/$(PROJECT)/" $(MANIFEST)
 
 POST_ALL:
 

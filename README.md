@@ -28,6 +28,13 @@ The tool has following parameters:
     ```
     In this example, you would use the trim parameters `-ts 12 -te 3` to remove redundant silence and save some bytes of RAM (although having a couple of trailing zeroes might result in a cool musical effect).
 
+The repository comes with three different samples: piano.wav, guitar.wav and choir.wav. You can switch between each of these using make target `chg_<samplename>`, e.g.:
+```sh
+make chg_piano
+```
+
+These will identify as "piano", "guitar" and "choir" in the manifest.json that is generated from manifest.json.in template.
+
 ### Parameters
 By default the oscillator is in "ROMpler playback mode". You can add in wavetable and granular like features using the **Shape** and **Shift + Shape** parameters, respectively. The user parameters are used for fine tuning these features.
 
