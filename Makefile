@@ -37,6 +37,7 @@ GCC_TARGET := arm-none-eabi-
 GCC_BIN_PATH ?= $(TOOLSDIR)/gcc/gcc-arm-none-eabi-5_4-2016q3/bin
 
 CC   := $(GCC_BIN_PATH)/$(GCC_TARGET)gcc
+CCNATIVE := gcc
 CXXC := $(GCC_BIN_PATH)/$(GCC_TARGET)g++
 LD   := $(GCC_BIN_PATH)/$(GCC_TARGET)gcc
 #LD  := $(GCC_BIN_PATH)/$(GCC_TARGET)g++
@@ -148,7 +149,13 @@ all: PRE_ALL $(OBJS) $(OUTFILES) POST_ALL
 	@echo Done
 	@echo
 
-PRE_ALL:
+PRE_ALL: sample_data
+
+sample_data: 8bitdump
+	tools/8bit_dump -i sampledata/piano.wav -o generated_dataoscsrc.c -ts 1 -te 0
+
+8bitdump:
+	$(CCNATIVE) tools/8bit_dump.c tools/args.c tools/wav_handler/wav_handler.c -o tools/8bit_dump
 
 POST_ALL:
 

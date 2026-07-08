@@ -1,1 +1,3 @@
 build/
+generated_*
+tools/8bit_dump

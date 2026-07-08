@@ -4,7 +4,7 @@
 
 PROJECT = piano
 
-UCSRC = piano.c osc.c flt.c
+UCSRC = generated_dataoscsrc.c osc.c flt.c
 
 UCXXSRC =
 
