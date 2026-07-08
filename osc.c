@@ -4,9 +4,9 @@
 
 #define MIDDLE_C_FREQ_HZ 261.6256
 
-#define RELST_INIT 0
-#define RELST_RELEASED 1
-#define RELST_ENDED 2
+#define RELEASE_STATE_INIT 0
+#define RELEASE_STATE_RELEASED 1
+#define RELEASE_STATE_ENDED 2
 
 #define TAIL_LOOP_MODE_TO_END 0
 #define TAIL_LOOP_MODE_INFINITE 1
@@ -15,26 +15,44 @@
 
 struct data_osc
 {
+  // Sample data array
   const int8_t *data;
+  // Sample data number of frames
   uint32_t data_len;
+  // Sample data sampling rate
   uint32_t data_sr;
+  // Sample player index
   float phase;
+  // Index increment
   float inc;
-  uint8_t relst; // release state
+  // Release state (INIT = not released, RELEASED = released but not played to end, ENDED = voice should be silent after this)
+  uint8_t release_state;
+  // Point where loopback is triggered; effectively the length of the sample
   float loopback_point;
+  // Length of the fraction played when looping the tail
   float loopback_offs;
-  float loopback_offs_mod;
+  // What to do after note release? see TAIL_LOOP_MODE_TO_END, TAIL_LOOP_MODE_INFINITE
   uint8_t tail_loop_mode;
+  // Configured number of loopback bounces; meaning that instead of looping the tail,
+  // start playback at earlier index
   uint8_t n_loopback_bounce;
+  // Number of bounces left. INFINITE_BOUNCE = never stop bouncing
   uint8_t loopback_bounce_counter;
-  uint8_t loopback_bounce_counter_full_reset_prob;
+  // Probability of jumping to playback index 0 instead of loopback_bounce_offset
+  uint8_t loopback_bounce_full_reset_prob;
+  // Where the playback index will jump to when bouncing when sample end reached.
+  // Range 0..1. The position is loopback_point * loopback_bounce_offset
   float loopback_bounce_offset;
+  // Bandwidth limiting filter
   struct filter_state bwlim;
-  float freq;
+  // Bandwidth limiting filter cutoff as a ratio in respect to note fundamental frequency.
+  // E.g. bwlim_ratio = 10, Playing note at 440 Hz -> bwlim cutoff at 4400 Hz.
   float bwlim_ratio;
 };
+
 static struct data_osc osc;
 
+// Fast pseudo random implementation
 static uint32_t rand_state = 123;
 static inline uint32_t next_random()
 {
@@ -72,7 +90,7 @@ void OSC_INIT(uint32_t platform, uint32_t api)
   osc.bwlim_ratio = 20;
   osc.loopback_point = osc.data_len;
   osc.loopback_bounce_offset = 0;
-  osc.loopback_bounce_counter_full_reset_prob = 0;
+  osc.loopback_bounce_full_reset_prob = 0;
 }
 
 void OSC_CYCLE(const user_osc_param_t *const params,
@@ -88,7 +106,7 @@ void OSC_CYCLE(const user_osc_param_t *const params,
 
   for (; y != y_e;)
   {
-    if (osc.relst == RELST_ENDED)
+    if (osc.release_state == RELEASE_STATE_ENDED)
     {
       *(y++) = 0;
       continue;
@@ -100,7 +118,7 @@ void OSC_CYCLE(const user_osc_param_t *const params,
     {
       if (osc.loopback_bounce_counter > 0)
       {
-        if (osc.loopback_bounce_counter_full_reset_prob && (next_random() & 63) < osc.loopback_bounce_counter_full_reset_prob)
+        if (osc.loopback_bounce_full_reset_prob && (next_random() & 63) < osc.loopback_bounce_full_reset_prob)
           osc.phase = 0;
         else
           osc.phase = osc.loopback_bounce_offset * loopback_point;
@@ -109,10 +127,10 @@ void OSC_CYCLE(const user_osc_param_t *const params,
       }
       else
       {
-        osc.phase -= osc.loopback_offs + osc.loopback_offs_mod;
+        osc.phase -= osc.loopback_offs;
       }
-      if (osc.relst == RELST_RELEASED && osc.tail_loop_mode == TAIL_LOOP_MODE_TO_END)
-        osc.relst = RELST_ENDED;
+      if (osc.release_state == RELEASE_STATE_RELEASED && osc.tail_loop_mode == TAIL_LOOP_MODE_TO_END)
+        osc.release_state = RELEASE_STATE_ENDED;
     }
 
     out = process_filter(&osc.bwlim, out);
@@ -134,15 +152,14 @@ void OSC_NOTEON(const user_osc_param_t *const params)
 
   osc.inc = inc;
   osc.phase = 0;
-  osc.relst = RELST_INIT;
+  osc.release_state = RELEASE_STATE_INIT;
   osc.loopback_bounce_counter = osc.loopback_bounce_offset < 0.001 ? 0 : osc.n_loopback_bounce;
-  osc.loopback_offs_mod = 0;
 }
 
 void OSC_NOTEOFF(const user_osc_param_t *const params)
 {
   (void)params;
-  osc.relst = RELST_RELEASED;
+  osc.release_state = RELEASE_STATE_RELEASED;
 }
 
 void OSC_PARAM(uint16_t index, uint16_t value)
@@ -156,7 +173,7 @@ void OSC_PARAM(uint16_t index, uint16_t value)
     osc.n_loopback_bounce = (uint8_t)value + 1;
     break;
   case k_user_osc_param_id3:
-    osc.loopback_bounce_counter_full_reset_prob = value;
+    osc.loopback_bounce_full_reset_prob = value;
     break;
   case k_user_osc_param_id4:
     if (value == 0)
